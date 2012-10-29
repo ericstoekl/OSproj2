@@ -344,6 +344,8 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
 */
 // input error or end-of-file; for this stage, it's not an error
 
+    pthread_join(read_thread, NULL);
+
     fclose(fp_in);
     fflush(fp_out);
     fclose(fp_out);

@@ -30,6 +30,15 @@ struct r_trd_dat
     l_list *infile_list;
 };
 
+// struct for data passed into each search_thread
+struct s_trd_dat
+{
+    char *_m;           // search term from command line -m option
+    char *_protected;   // line from input file to compare _m to, critical section of memory.
+                        // use semaphore to make sure data has written to this
+                        // before you try to read from it.
+};
+
 l_list *l_list_init();
 
 int l_list_append(l_list *L, char *data);
