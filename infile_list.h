@@ -55,7 +55,7 @@ int l_list_append(l_list *L, char *data);
 
 s_list *s_list_init();
 
-int s_list_append(s_list *S, pthread_t tid, char *_m);
+int s_list_append(s_list *S, s_node *s);
 
 void err_sys(char *msg);
 

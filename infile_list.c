@@ -72,8 +72,9 @@ s_list *s_list_init()
 
 }
 
-int s_list_append(s_list *S, pthread_t tid, char *_m)
+int s_list_append(s_list *S, s_node *s)
 {
+    /*
     s_node *s = (s_node *)malloc(sizeof(s_node));
     if(s == NULL)
     {
@@ -90,7 +91,13 @@ int s_list_append(s_list *S, pthread_t tid, char *_m)
         return -1;
     }
     s->_protected = NULL; // This is the critical section, it will need to be set later.
-    
+    */
+    if(s == NULL)
+    {
+        err_sys("s_node parameter uninitialized (s_list_append)");
+        return -1;
+    }
+
     if(S->head == NULL)
         S->head = S->tail = s;
     else

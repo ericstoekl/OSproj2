@@ -29,17 +29,29 @@ void *read_trd_fn(void *trd_data)
         printf("infile: %s", np->data);
 */
 
-    struct foo *m_list = infile_m_lines->m_list;
+    struct foo *m = infile_m_lines->m_list;
     l_list *infile_list = infile_m_lines->infile_list;
 
+    // Create list of search threads
     s_list *search_threads = s_list_init();
 
-    
-
-
     // create each search thread:
-    for(; m_list != NULL; m_list = m_list->next)
+    for(; m != NULL; m = m->next)
     {
-        
+        s_node *s = (s_node *)malloc(sizeof(s_node));
+        if(s == NULL)
+            err_sys("malloc (read_trd_fn)");
+    
+        s->next = NULL;
+        /*s->tid = pthread_create();*/
+        s->_m = strdup(m->string);
+        if(s->_m == NULL)
+            err_sys("strdup (read_trd_fn)");
+
+        printf("sanity check: new thread m value: %s\n", s->_m);
+
+        // Append the newly created s_node to the list.
+        if(s_list_append(search_threads, s) != 0)
+            exit(0);
     }
 }
