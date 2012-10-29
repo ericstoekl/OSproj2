@@ -1,6 +1,8 @@
 #ifndef _INFILE_LIST
 #define _INFILE_LIST
 
+#include <pthread.h>
+
 typedef struct line_node 
 {
     struct line_node *next;
@@ -31,17 +33,29 @@ struct r_trd_dat
 };
 
 // struct for data passed into each search_thread
-struct s_trd_dat
+typedef struct s_trd_dat
 {
+    struct s_trd_dat *next;
+    pthread_t tid;
     char *_m;           // search term from command line -m option
     char *_protected;   // line from input file to compare _m to, critical section of memory.
                         // use semaphore to make sure data has written to this
                         // before you try to read from it.
-};
+} s_node;
+
+typedef struct s_trd_list
+{
+    s_node *head;
+    s_node *tail;
+} s_list;
 
 l_list *l_list_init();
 
 int l_list_append(l_list *L, char *data);
+
+s_list *s_list_init();
+
+int s_list_append(s_list *S, pthread_t tid, char *_m);
 
 void err_sys(char *msg);
 

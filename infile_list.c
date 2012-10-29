@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include <pthread.h>
+
 
 /*
 typedef struct line_node 
@@ -54,6 +56,47 @@ int l_list_append(l_list *L, char *data)
     {
         L->tail->next = p;
         L->tail = p;
+    }
+
+    return 0;
+}
+
+s_list *s_list_init()
+{
+    s_list *S = (s_list *)malloc(sizeof(s_list));
+    if(S == NULL)
+        err_sys("malloc (s_list_init)");
+    
+    S->head = S->tail = NULL;
+    return S;
+
+}
+
+int s_list_append(s_list *S, pthread_t tid, char *_m)
+{
+    s_node *s = (s_node *)malloc(sizeof(s_node));
+    if(s == NULL)
+    {
+        err_sys("malloc (s_list_append)");
+        return -1;
+    }
+
+    s->next = NULL;
+    s->tid = tid;
+    s->_m = strdup(_m);
+    if(s->_m == NULL)
+    {
+        err_sys("strdup (s_list_append)");
+        return -1;
+    }
+    s->_protected = NULL; // This is the critical section, it will need to be set later.
+    
+    if(S->head == NULL)
+        S->head = S->tail = s;
+    else
+    {
+        S->tail->next = s;
+        S->tail = s;
     }
 
     return 0;

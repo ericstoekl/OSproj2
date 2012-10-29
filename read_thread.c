@@ -32,6 +32,11 @@ void *read_trd_fn(void *trd_data)
     struct foo *m_list = infile_m_lines->m_list;
     l_list *infile_list = infile_m_lines->infile_list;
 
+    s_list *search_threads = s_list_init();
+
+    
+
+
     // create each search thread:
     for(; m_list != NULL; m_list = m_list->next)
     {
