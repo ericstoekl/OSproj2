@@ -1,4 +1,5 @@
 #include "read_thread.h"
+#include "infile_list.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +12,18 @@
 #include <string.h>
 
 #include <pthread.h>
+#include <semaphore.h>
 
-void *read_thread(int fd_read)
+void *read_trd_fn(void *trd_data)
 {
+    struct r_trd_dat *infile_m_lines = (struct r_trd_dat *)trd_data;
+
+    // verify that data got passed in correctly:
+    struct foo *p = infile_m_lines->m_list;
+    for(; p != NULL; p = p->next)
+        printf("%s\n", p->string);
+
+    node *np = infile_m_lines->infile_list->head;
+    for(; np != NULL; np = np->next)
+        printf("infile: %s", np->data);
 }

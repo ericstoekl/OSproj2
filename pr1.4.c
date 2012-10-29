@@ -31,15 +31,6 @@
 //void err_sys(char *msg);
 void err_usage(char *prog);
 
-// list of strings
-struct foo { struct foo *next; char *string; int length; int lines; int matches; };
-// string length (simplifies the matching algorithm)
-// number of lines that matched string at least once per line
-// number of matches across all lines
-
-// In a pipe, the parent is upstream, and the child is downstream, connected by
-//   a pair of open file descriptors.
-
 void p1_actions(char *file_in, int fd_out);
 void p2_actions(struct foo *list, int fd_in, int fd_out);
 void p3_actions(int fd_in, char *file_out);
@@ -298,11 +289,29 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
 
     char line[BUFFER_SIZE];
 
+    // put each line into list of input file lines
     while(fgets(line, BUFFER_SIZE, fp_in) != NULL)
     {
-        // put each line into list of input file lines
         l_list_append(infile_lines, line);
     }
+
+    // package both lists (input file lines and m_lines) into a r_trd_dat struct:
+    struct r_trd_dat *trd_data = (struct r_trd_dat *)malloc(sizeof(struct r_trd_dat));
+    if(trd_data == NULL)
+        err_sys("trd_data malloc failed (p2_actions)");
+    trd_data->m_list = list;
+    trd_data->infile_list = infile_lines;
+
+    // Initialize read_thread:
+    pthread_t read_thread;
+    int trd_err;
+
+    trd_err = pthread_create(&read_thread, NULL, read_trd_fn, (void *)trd_data);
+    if(trd_err != 0)
+    {
+        err_sys("error creating thread (p2_actions)");
+    }
+
 
 /*    while (fgets(line, BUFFER_SIZE, fp_in) != NULL)
     {                                             // line ends with newline-null
