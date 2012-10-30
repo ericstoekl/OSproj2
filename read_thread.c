@@ -16,6 +16,11 @@
 
 void *read_trd_fn(void *trd_data)
 {
+    // A new thread has been created, only one of its kind.
+    // It was created in p2_actions
+    // trd_data points to a struct r_trd_data which contains
+    // (1) a linked list of all the lines from the input file
+    // (2) a struct foo iterator of all the -m options supplied by the command line.
     struct r_trd_dat *infile_m_lines = (struct r_trd_dat *)trd_data;
 
 /*
@@ -43,10 +48,11 @@ void *read_trd_fn(void *trd_data)
             err_sys("malloc (read_trd_fn)");
     
         s->next = NULL;
-        pthread_create(s->tid, NULL, search_trd_fn, (void *)m->string);
         s->_m = strdup(m->string);
         if(s->_m == NULL)
             err_sys("strdup (read_trd_fn)");
+
+        pthread_create(&s->tid, NULL, search_trd_fn, (void *)s);
 
         printf("sanity check: new thread m value: %s\n", s->_m);
 
@@ -54,10 +60,20 @@ void *read_trd_fn(void *trd_data)
         if(s_list_append(search_threads, s) != 0)
             exit(0);
     }
+
+    // Now all the search threads have been created (for 3 -m options supplied, there should be 3 threads)
+    // Now put each line from the input file into each (search_thread's) s_node's _protected char*.
 }
 
 void *search_trd_fn(void *s_data)
 {
+    // New thread has been created, that will be pushed into the search_threads list
+    // s_data is the -m string that we need to search for.
+
+    s_node *s = (s_node *)s_data;
+
+    printf("Hi from search_thread_fn! My data is: %s, my thread id is: %u or %u\n", s->_m, 
+        (unsigned int)s->tid, (unsigned int)pthread_self());
 
 }
 
