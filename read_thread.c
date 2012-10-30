@@ -43,7 +43,7 @@ void *read_trd_fn(void *trd_data)
             err_sys("malloc (read_trd_fn)");
     
         s->next = NULL;
-        /*s->tid = pthread_create();*/
+        pthread_create(s->tid, NULL, search_trd_fn, (void *)m->string);
         s->_m = strdup(m->string);
         if(s->_m == NULL)
             err_sys("strdup (read_trd_fn)");
@@ -55,3 +55,12 @@ void *read_trd_fn(void *trd_data)
             exit(0);
     }
 }
+
+void *search_trd_fn(void *s_data)
+{
+
+}
+
+
+
+
