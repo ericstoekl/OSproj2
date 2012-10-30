@@ -14,6 +14,9 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+sem_t search_sem;
+sem_t n_sem;
+
 void *read_trd_fn(void *trd_data)
 {
     // A new thread has been created, only one of its kind.
@@ -33,6 +36,10 @@ void *read_trd_fn(void *trd_data)
     for(; np != NULL; np = np->next)
         printf("infile: %s", np->data);
 */
+
+    printf("Initting semaphore variable\n");
+    sem_init(&search_sem, 0, 1); // Initial value of search_sem set to 1
+    sem_init(&n_sem, 0, 0);      // n_sem for producer/consumer, init to 0
 
     struct foo *m = infile_m_lines->m_list;
     l_list *infile_list = infile_m_lines->infile_list;
@@ -63,6 +70,24 @@ void *read_trd_fn(void *trd_data)
 
     // Now all the search threads have been created (for 3 -m options supplied, there should be 3 threads)
     // Now put each line from the input file into each (search_thread's) s_node's _protected char*.
+
+    
+    // Loop through infile_list, posting each line to each thread's _protected data section with a semaphore.
+    node *in_iter = infile_list->head;     // Data from input file
+    s_node *s_iter = search_threads->head; // linked list of threads
+    for(; in_iter != NULL; in_iter = in_iter->next)
+    {
+
+        for(; s_iter != NULL; s_iter = s_iter->next)
+        {
+            sem_wait(&search_sem);
+            s_iter->_protected = in_iter->data;
+            sem_post(&search_sem);
+            sem_post(&n_sem);
+        }
+    }
+    
+    return NULL;
 }
 
 void *search_trd_fn(void *s_data)
@@ -72,9 +97,13 @@ void *search_trd_fn(void *s_data)
 
     s_node *s = (s_node *)s_data;
 
-    printf("Hi from search_thread_fn! My data is: %s, my thread id is: %u or %u\n", s->_m, 
-        (unsigned int)s->tid, (unsigned int)pthread_self());
+    sem_wait(&n_sem);
+    sem_wait(&search_sem);
+    printf("Hi from search_thread_fn! My data is: %s, my thread id is: %u, protected is %s", s->_m, 
+        (unsigned int)s->tid, s->_protected);
+    sem_post(&search_sem);
 
+    return NULL;
 }
 
 
