@@ -94,7 +94,13 @@ void *read_trd_fn(void *trd_data)
             sem_post(&more_data_sem);
         s_count = 0;
     }
-    
+
+    // wait for each thread to finish:
+    for(s_iter = search_threads->head; s_iter != NULL; s_iter = s_iter->next)
+    {
+        pthread_join(s_iter->tid, NULL);
+    }
+
     return NULL;
 }
 
@@ -104,13 +110,31 @@ void *search_trd_fn(void *s_data)
     // s_data is the -m string that we need to search for.
 
     s_node *s = (s_node *)s_data;
+    
+    int len = strlen(s->_m);
 
     while(1)
     {
         sem_wait(&n_sem);
         sem_wait(&search_sem);
-        printf("Hi from search_thread_fn! My data is: %s, my thread id is: %u, protected is %s", s->_m, 
-            (unsigned int)s->tid, s->_protected);
+
+/**************************************************************************/
+        char *begin = s->_protected;
+        char *end = strchr(begin, '\0');      // terminating null char
+        char *match = NULL;
+        int matches = 0;
+        while (begin < end && (match = strstr(begin, s->_m)) != NULL)
+        {
+            printf("Found %s in line %s, tid: %u\n", s->_m, s->_protected, (unsigned int)s->tid);
+            matches++;
+            begin = match + len;
+        }
+        //p->lines += (matches > 0);
+        //p->matches += matches;
+/**************************************************************************/
+//        printf("Hi from search_thread_fn! My data is: %s, my thread id is: %u, protected is %s", s->_m, 
+//            (unsigned int)s->tid, s->_protected);
+
         sem_post(&search_sem);
         sem_wait(&more_data_sem);
     }
@@ -118,6 +142,8 @@ void *search_trd_fn(void *s_data)
     return NULL;
 }
 
+void *collector_trd_fn(void *col_data)
+{
 
-
-
+    // sem_wait on semaphore that will be posted when all data is ready to be passed to P3.
+}
