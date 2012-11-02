@@ -41,6 +41,10 @@ typedef struct s_trd_dat
     char *_protected;   // line from input file to compare _m to, critical section of memory.
                         // use semaphore to make sure data has written to this
                         // before you try to read from it.
+    l_list *infile_list;
+
+    int lines;
+    int matches;
 } s_node;
 
 typedef struct s_trd_list

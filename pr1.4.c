@@ -38,6 +38,8 @@ void p3_actions(int fd_in, char *file_out);
 // fd = file descriptor, opened by pipe()
 // treat fd as if it had come from open()
 
+extern char *p3_data;
+
 #define BUFFER_SIZE 4096
 
 //--------------------------------------------------------------------------------
@@ -302,8 +304,9 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
     trd_data->m_list = list;
     trd_data->infile_list = infile_lines;
 
-    // Initialize read_thread:
+    // Initialize threads:
     pthread_t read_thread;
+    pthread_t col_thread;
     int trd_err;
 
     trd_err = pthread_create(&read_thread, NULL, read_trd_fn, (void *)trd_data);
@@ -311,6 +314,13 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
     {
         err_sys("error creating thread (p2_actions)");
     }
+
+    trd_err = pthread_create(&col_thread, NULL, collector_trd_fn, (void *)fp_out);
+    if(trd_err != 0)
+    {
+        err_sys("error creating thread (p2_actions)");
+    }
+
 
 
 /*    while (fgets(line, BUFFER_SIZE, fp_in) != NULL)
@@ -345,6 +355,9 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
 // input error or end-of-file; for this stage, it's not an error
 
     pthread_join(read_thread, NULL);
+    pthread_join(col_thread, NULL);
+
+    //printf("Result: %s\n", p3_data);
 
     fclose(fp_in);
     fflush(fp_out);
