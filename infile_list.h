@@ -2,6 +2,8 @@
 #define _INFILE_LIST
 
 #include <pthread.h>
+#include <semaphore.h>
+#include <stdio.h>
 
 typedef struct line_node 
 {
@@ -30,6 +32,7 @@ struct r_trd_dat
 {
     struct foo *m_list;
     l_list *infile_list;
+    FILE *fp;
 };
 
 // struct for data passed into each search_thread
@@ -45,6 +48,9 @@ typedef struct s_trd_dat
 
     int lines;
     int matches;
+
+    sem_t *search_sem;
+    sem_t *n_sem;
 } s_node;
 
 typedef struct s_trd_list
@@ -56,6 +62,8 @@ typedef struct s_trd_list
 l_list *l_list_init();
 
 int l_list_append(l_list *L, char *data);
+
+char *l_list_pop(l_list *L);
 
 s_list *s_list_init();
 

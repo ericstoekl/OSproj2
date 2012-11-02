@@ -14,11 +14,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-sem_t search_sem;
-sem_t n_sem;
-sem_t more_data_sem;
+#define _GNU_SOURCE
 
-char *p3_data;
+pthread_mutex_t mutex;
+
+l_list *p3_data;
 
 void *read_trd_fn(void *trd_data)
 {
@@ -29,21 +29,14 @@ void *read_trd_fn(void *trd_data)
     // (2) a struct foo iterator of all the -m options supplied by the command line.
     struct r_trd_dat *infile_m_lines = (struct r_trd_dat *)trd_data;
 
-/*
-    // verify that data got passed in correctly:
-    struct foo *p = infile_m_lines->m_list;
-    for(; p != NULL; p = p->next)
-        printf("%s\n", p->string);
-
-    node *np = infile_m_lines->infile_list->head;
-    for(; np != NULL; np = np->next)
-        printf("infile: %s", np->data);
-*/
-
     printf("Initting semaphore variable\n");
-    sem_init(&search_sem, 0, 1); // Initial value of search_sem set to 1
+/*    sem_init(&search_sem, 0, 1); // Initial value of search_sem set to 1
     sem_init(&n_sem, 0, 0);      // n_sem for producer/consumer, init to 0
     sem_init(&more_data_sem, 0, 0);
+
+    sem_init(&empty, 0, 1);
+    sem_init(&full, 0, 0);*/
+    pthread_mutex_init(&mutex, NULL);
 
     struct foo *m = infile_m_lines->m_list;
     l_list *infile_list = infile_m_lines->infile_list;
@@ -51,10 +44,18 @@ void *read_trd_fn(void *trd_data)
     // Create list of search threads
     s_list *search_threads = s_list_init();
 
+    // initialize p3_data:
+    p3_data = l_list_init();
+
     int s_count = 0;
 
-    // create each search thread:
     for(; m != NULL; m = m->next)
+        s_count++;
+
+
+    int i = 0;
+    // create each search thread:
+    for(m = infile_m_lines->m_list; m != NULL; m = m->next)
     {
         s_node *s = (s_node *)malloc(sizeof(s_node));
         if(s == NULL)
@@ -79,11 +80,9 @@ void *read_trd_fn(void *trd_data)
 
         pthread_create(&s->tid, NULL, search_trd_fn, (void *)s);
 
-        //printf("sanity check: new thread m value: %s\n", s->_m);
-        //for(copy_iter = s->infile_list->head; copy_iter != NULL; copy_iter = copy_iter->next)
-            //printf("sanity check: infile_list line: %s", copy_iter->data);
+        pthread_join(s->tid, NULL);
 
-        s_count++;
+        i++;
     }
 
     printf("s_count = %d\n", s_count);
@@ -91,11 +90,11 @@ void *read_trd_fn(void *trd_data)
     // Now all the search threads have been created (for 3 -m options supplied, there should be 3 threads)
     // Now put each line from the input file into each (search_thread's) s_node's _protected char*.
 
-    s_node *joiner = search_threads->head;
-    for(; joiner != NULL; joiner = joiner->next)
-    {
-        pthread_join(joiner->tid, NULL);
-    }
+    node *end;
+    for(end = p3_data->head; end != NULL; end = end->next)
+        fprintf(infile_m_lines->fp, "%s", end->data);
+
+    pthread_exit(NULL);
     return NULL;
 }
 
@@ -112,13 +111,8 @@ void *search_trd_fn(void *s_data)
 
     for(iter = s->infile_list->head; iter != NULL; iter = iter->next)
     {
-        //sem_wait(&n_sem);
-        //sem_wait(&search_sem);
-
         //printf("Hi from search_thread_fn! My data is: %s, my thread id is: %u, protected is %s", s->_m,
-             //(unsigned int)s->tid, s->_protected);
-        printf("Hi from search_thread_fn! My data is: %s, my thread id is: %u, protected is %s", s->_m,
-             (unsigned int)s->tid, iter->data);
+             //(unsigned int)s->tid, iter->data);
 /**************************************************************************/
         char *begin = iter->data;
         char *end = strchr(begin, '\0');      // terminating null char
@@ -137,31 +131,51 @@ void *search_trd_fn(void *s_data)
 /**************************************************************************/
         if(matched > 0)
         {
-            printf("Starting semaphore part!!!!!!!!!!!\n");
             // Post data to collector thread.
-            sem_wait(&search_sem);
-            p3_data = strdup(iter->data);
-            sem_post(&search_sem);
-            sem_post(&n_sem);
+            pthread_mutex_lock(&mutex);
+            l_list_append(p3_data, iter->data);
+            pthread_mutex_unlock(&mutex);
         }
-
-        //sem_post(&search_sem);
-        //sem_wait(&more_data_sem);
     }
 
+    pthread_exit(NULL);
     return NULL;
 }
 
 void *collector_trd_fn(void *col_data)
 {
     // sem_wait on semaphore that will be posted when all data is ready to be passed to P3.
+    node *p;
+    char *holder;
 
-    printf("Waiting on n_sem\n");
+    while(1)
+    {
+        //sem_wait(&full);
+        pthread_mutex_lock(&mutex);
+
+        holder = l_list_pop(p3_data);
+        printf("\tGot p3_data: %s", holder);
+        p = p3_data->head;
+        
+        pthread_mutex_unlock(&mutex);
+        //sem_post(&empty);
+    }
+
+/*
     sem_wait(&n_sem);
-    printf("Waiting on search_sem\n");
+    printf("waiting on search_sem\n");
     sem_wait(&search_sem);
-    printf("\tGot p3 data: %s", p3_data);
-    //fflush(stdout);
-    sem_post(&search_sem);
 
+    p = p3_data->head;
+    while(p != NULL)
+    {
+        holder = l_list_pop(p3_data);
+        printf("\tGot p3 data: %s", holder);
+        p = p3_data->head;
+    }
+
+    sem_post(&search_sem);
+*/
+
+    pthread_exit(NULL);
 }

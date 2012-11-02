@@ -61,6 +61,21 @@ int l_list_append(l_list *L, char *data)
     return 0;
 }
 
+char *l_list_pop(l_list *L)
+{
+    if (L == NULL || L->head == NULL)
+        err_sys("error (l_list_pop)");
+
+    node *top = L->head;
+
+    // Pop the first element from the list:
+    char *ret = strdup(L->head->data);
+    L->head = top->next;
+    free(top);
+    return ret;
+
+}
+
 s_list *s_list_init()
 {
     s_list *S = (s_list *)malloc(sizeof(s_list));

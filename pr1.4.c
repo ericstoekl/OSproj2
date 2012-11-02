@@ -303,6 +303,7 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
         err_sys("trd_data malloc failed (p2_actions)");
     trd_data->m_list = list;
     trd_data->infile_list = infile_lines;
+    trd_data->fp = fp_out;
 
     // Initialize threads:
     pthread_t read_thread;
@@ -315,12 +316,12 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
         err_sys("error creating thread (p2_actions)");
     }
 
-    trd_err = pthread_create(&col_thread, NULL, collector_trd_fn, (void *)fp_out);
+/*    trd_err = pthread_create(&col_thread, NULL, collector_trd_fn, (void *)fp_out);
     if(trd_err != 0)
     {
         err_sys("error creating thread (p2_actions)");
     }
-
+*/
 
 
 /*    while (fgets(line, BUFFER_SIZE, fp_in) != NULL)
@@ -355,7 +356,7 @@ void p2_actions(struct foo *list, int fd_in, int fd_out)
 // input error or end-of-file; for this stage, it's not an error
 
     pthread_join(read_thread, NULL);
-    pthread_join(col_thread, NULL);
+    //pthread_join(col_thread, NULL);
 
     //printf("Result: %s\n", p3_data);
 
